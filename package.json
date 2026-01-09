@@ -1,0 +1,44 @@
+{
+    "name": "kanji-recognizer",
+    "version": "0.1.0",
+    "description": "A robust Kanji stroke order recognition and validation library using KanjiVG data.",
+    "main": "src/index.js",
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./src/index.js"
+        }
+    },
+    "files": [
+        "src",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "start": "vite",
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "keywords": [
+        "kanji",
+        "recognition",
+        "stroke-order",
+        "japanese",
+        "kanjivg",
+        "handwriting",
+        "svg"
+    ],
+    "author": "Antigravity",
+    "license": "MIT",
+    "devDependencies": {
+        "vite": "^5.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mxggle/kanji-recognizer.git"
+    },
+    "bugs": {
+        "url": "https://github.com/mxggle/kanji-recognizer/issues"
+    },
+    "homepage": "https://github.com/mxggle/kanji-recognizer#readme"
+}

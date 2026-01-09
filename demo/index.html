@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanji Recognition Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f0f2f5;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        input[type="text"] {
+            padding: 8px 12px;
+            font-size: 1.2rem;
+            width: 60px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+
+        button.primary {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button.primary:hover {
+            background: #0056b3;
+        }
+
+        #writer-container {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: white;
+            /* Background pattern */
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbGw9J3doaXRlJy8+PC9zdmc+');
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-hint {
+            background-color: #8B5CF6;
+        }
+
+        /* Vibrant Purple */
+        .btn-hint:hover {
+            background-color: #7C3AED;
+        }
+
+        .btn-animate {
+            background-color: #10B981;
+        }
+
+        /* Vibrant Emerald Green */
+        .btn-animate:hover {
+            background-color: #059669;
+        }
+
+        .btn-clear {
+            background-color: #EF4444;
+        }
+
+        /* Vibrant Coral Red */
+        .btn-clear:hover {
+            background-color: #DC2626;
+        }
+
+        .status {
+            margin-top: 1rem;
+            font-weight: bold;
+            color: #666;
+            height: 1.5em;
+            /* Prevent layout shift */
+        }
+
+        .instructions {
+            margin-bottom: 1rem;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Kanji Recognizer</h1>
+
+        <div class="input-group">
+            <input type="text" id="kanji-input" placeholder="日" maxlength="1" value="二">
+            <button id="load-btn" class="primary">Load</button>
+        </div>
+
+        <p class="instructions" id="instructions">Loading...</p>
+
+        <details style="margin-bottom: 1rem; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 8px;">
+            <summary style="cursor: pointer; color: #555; font-weight: bold; margin-bottom: 5px;">Settings</summary>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
+                <label>Stroke Color: <input type="color" id="stroke-color" value="#333333"></label>
+                <label>Highlight: <input type="color" id="correct-color" value="#4CAF50"></label>
+                <label>Mistake: <input type="color" id="incorrect-color" value="#F44336"></label>
+                <label>Hint: <input type="color" id="hint-color" value="#00FFFF"></label>
+                <label>Ghost: <input type="color" id="ghost-color" value="#FF0000"></label>
+                <label>Grid: <input type="color" id="grid-color" value="#DDDDDD"></label>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; gap: 15px; font-size: 0.9rem;">
+                <label><input type="checkbox" id="ghost-toggle" checked> Show Hints</label>
+                <label><input type="checkbox" id="grid-toggle" checked> Show Grid</label>
+            </div>
+
+            <div style="margin-top: 10px; font-size: 0.9rem;">
+                <label>Speed (ms): <input type="number" id="speed-input" value="500" min="100" max="2000" step="100"
+                        style="width: 50px; padding: 2px;"></label>
+            </div>
+        </details>
+
+        <div id="writer-container"></div>
+
+        <div class="controls">
+            <button id="hint-btn" class="btn btn-hint">Hint</button>
+            <button id="animate-btn" class="btn btn-animate">Animate</button>
+            <button id="clear-btn" class="btn btn-clear">Clear</button>
+        </div>
+
+        <div class="status" id="status-text"></div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+</body>
+
+</html>

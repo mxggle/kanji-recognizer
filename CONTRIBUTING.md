@@ -288,7 +288,6 @@ npm run dev       # Alias for start
 
 - Open an issue with the `question` label
 - Join discussions on GitHub Discussions
-- Email: your.email@example.com
 
 ## 🙏 Recognition
 

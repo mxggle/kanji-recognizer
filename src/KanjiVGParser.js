@@ -40,7 +40,7 @@ export class KanjiVGParser {
             throw new Error('Invalid character: must be a non-empty string');
         }
 
-        let code = char.charCodeAt(0).toString(16);
+        let code = char.codePointAt(0).toString(16).toLowerCase();
         while (code.length < 5) code = "0" + code;
         return code;
     }
@@ -55,8 +55,8 @@ export class KanjiVGParser {
         }
 
         let hex = char;
-        // If it looks like a single character, convert to hex
-        if (char.length === 1 && char.charCodeAt(0) > 255) {
+        // If it looks like a single character (including surrogate pairs), convert to hex
+        if (Array.from(char).length === 1) {
             hex = this.getHex(char);
         }
 

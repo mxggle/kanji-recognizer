@@ -7,8 +7,9 @@ A lightweight, dependency-free JavaScript library for Kanji stroke order recogni
 
 ## ✨ Features
 
-- **🎯 Accurate Recognition** - Uses geometric resampling algorithm to compare user strokes against KanjiVG data
-- **📝 Stroke-by-Stroke Validation** - Enforces correct stroke order for proper kanji learning
+- **🎯 Accurate Recognition** - Uses geometric resampling algorithm with centroid-based alignment for robust recognition
+- **📝 Multiple Modes** - Supports Stroke-by-Stroke validation, Full Kanji check, and Free Write
+- **🖼️ Image Export** - Export your drawings as PNG images for AI analysis or saving
 - **🎨 Fully Customizable** - Easy to style colors, animations, and recognition sensitivity
 - **⚡ Lightweight** - Zero dependencies, pure SVG-based rendering
 - **📱 Mobile-Friendly** - Touch-optimized with pointer events
@@ -87,6 +88,7 @@ const writer = new KanjiWriter(elementId, kanjiData, options);
   // Behavior
   showGhost: true,               // Show red guide for next stroke
   showGrid: true,                // Show background grid
+  checkMode: 'stroke',           // 'stroke' (immediate), 'full' (manual), or 'free' (no validation)
   
   // Recognition (Adjustable!)
   passThreshold: 15,             // Lower = stricter (10-20 recommended)
@@ -139,6 +141,25 @@ Clean up resources and remove event listeners.
 
 ```javascript
 writer.destroy();
+```
+
+##### `exportImage(options)`
+Export the current drawing as a base64 PNG image.
+
+```javascript
+const dataUrl = await writer.exportImage({
+  includeGrid: false,
+  backgroundColor: '#ffffff'
+});
+// Send dataUrl to AI or save it
+```
+
+##### `check()`
+Manually trigger evaluation of all collected strokes (only for `checkMode: 'full'`).
+
+```javascript
+const result = writer.check();
+if (result.success) console.log("All strokes correct!");
 ```
 
 #### Event Callbacks

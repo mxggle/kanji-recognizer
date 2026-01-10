@@ -10,8 +10,15 @@ const containerEl = document.getElementById('writer-container');
 const hintBtn = document.getElementById('hint-btn');
 const animateBtn = document.getElementById('animate-btn');
 const clearBtn = document.getElementById('clear-btn');
+const checkBtn = document.getElementById('check-btn');
+const exportBtn = document.getElementById('export-btn');
+
+const exportModal = document.getElementById('export-modal');
+const exportPreview = document.getElementById('export-preview');
+const closeModal = document.getElementById('close-modal');
 
 // Settings Inputs
+const checkModeSelect = document.getElementById('check-mode');
 const strokeColorInput = document.getElementById('stroke-color');
 const correctColorInput = document.getElementById('correct-color');
 const incorrectColorInput = document.getElementById('incorrect-color');
@@ -36,6 +43,7 @@ function getOptions() {
         gridColor: gridColorInput.value,
         showGhost: ghostToggle.checked,
         showGrid: gridToggle.checked,
+        checkMode: checkModeSelect.value,
         stepDuration: parseInt(speedInput.value, 10) || 500
     };
 }
@@ -141,21 +149,77 @@ clearBtn.addEventListener('click', () => {
     if (writer) writer.clear();
 });
 
+checkBtn.addEventListener('click', () => {
+    if (writer) {
+        const result = writer.check();
+        if (result.success) {
+            statusEl.textContent = "Correct!";
+            statusEl.style.color = "green";
+        } else {
+            statusEl.textContent = "Some strokes are wrong. Try again.";
+            statusEl.style.color = "red";
+        }
+    }
+});
+
+exportBtn.addEventListener('click', async () => {
+    if (writer) {
+        try {
+            statusEl.textContent = "Exporting...";
+            const dataUrl = await writer.exportImage({
+                includeGrid: gridToggle.checked, // Use grid toggle setting for export too
+                backgroundColor: "#ffffff"
+            });
+            exportPreview.src = dataUrl;
+            exportModal.style.display = 'flex';
+            statusEl.textContent = "Export complete!";
+        } catch (e) {
+            console.error("Export failed:", e);
+            statusEl.textContent = "Export failed.";
+            statusEl.style.color = "red";
+        }
+    }
+});
+
+closeModal.addEventListener('click', () => {
+    exportModal.style.display = 'none';
+});
+
+// Close modal when clicking outside content
+exportModal.addEventListener('click', (e) => {
+    if (e.target === exportModal) {
+        exportModal.style.display = 'none';
+    }
+});
+
 // Settings Changes
 const updateSettings = () => {
     if (writer) {
         writer.setOptions(getOptions());
+        // Toggle Check button visibility
+        if (checkModeSelect.value === 'full') {
+            checkBtn.style.display = 'block';
+        } else {
+            checkBtn.style.display = 'none';
+        }
     }
 };
 
 [
     strokeColorInput, correctColorInput, incorrectColorInput,
     hintColorInput, ghostColorInput, gridColorInput,
-    ghostToggle, gridToggle, speedInput
+    ghostToggle, gridToggle, speedInput, checkModeSelect
 ].forEach(el => {
-    el.addEventListener('change', updateSettings);
+    el.addEventListener('change', () => {
+        if (el === checkModeSelect && writer) {
+            writer.clear();
+        }
+        updateSettings();
+    });
     // For sliders/colors, might want 'input' event for live preview, but 'change' is safer for now
-    el.addEventListener('input', updateSettings);
+    if (el !== checkModeSelect) {
+        el.addEventListener('input', updateSettings);
+    }
 });
 
 

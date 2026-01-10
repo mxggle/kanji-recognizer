@@ -129,6 +129,28 @@
             margin-bottom: 1rem;
             color: #555;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 90%;
+        }
     </style>
 </head>
 
@@ -164,17 +186,41 @@
                 <label>Speed (ms): <input type="number" id="speed-input" value="500" min="100" max="2000" step="100"
                         style="width: 50px; padding: 2px;"></label>
             </div>
+
+            <div style="margin-top: 10px; font-size: 0.9rem;">
+                <label>Mode:
+                    <select id="check-mode">
+                        <option value="stroke">Stroke-by-Stroke</option>
+                        <option value="full">Full Kanji</option>
+                        <option value="free">Free Write</option>
+                    </select>
+                </label>
+            </div>
         </details>
 
         <div id="writer-container"></div>
 
         <div class="controls">
             <button id="hint-btn" class="btn btn-hint">Hint</button>
+            <button id="check-btn" class="btn btn-animate"
+                style="display: none; background-color: #3B82F6;">Check</button>
+            <button id="export-btn" class="btn btn-animate" style="background-color: #F59E0B;">Export</button>
             <button id="animate-btn" class="btn btn-animate">Animate</button>
             <button id="clear-btn" class="btn btn-clear">Clear</button>
         </div>
 
         <div class="status" id="status-text"></div>
+    </div>
+
+    <div id="export-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Exported Image</h3>
+            <p style="font-size: 0.9rem; color: #666;">Right-click to copy or save</p>
+            <img id="export-preview" style="border: 2px solid #ccc; margin: 10px 0; max-width: 100%;">
+            <div>
+                <button id="close-modal" class="primary">Close</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="./app.js"></script>

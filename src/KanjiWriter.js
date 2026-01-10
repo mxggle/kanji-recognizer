@@ -18,17 +18,12 @@ export class KanjiWriter {
             // Toggles
             showGhost: true,              // Show red guide for next stroke
             showGrid: true,               // Show the background grid
+            checkMode: 'stroke',          // 'stroke' (immediate), 'full' (manual), or 'free' (no validation)
 
             // Appearance
             strokeWidth: 4,
             gridWidth: 0.5,
             ghostOpacity: "0.1",
-
-            // Animations
-            stepDuration: 500,
-            hintDuration: 800,
-            snapDuration: 200,
-
             ...options
         };
 
@@ -44,6 +39,7 @@ export class KanjiWriter {
         this.currentStrokeIndex = 0;
         this.isDrawing = false;
         this.currentPoints = [];
+        this.userStrokes = []; // Store strokes for 'full' mode
 
         // Use options.width/height in initSVG
         this.width = this.options.width;
@@ -112,7 +108,7 @@ export class KanjiWriter {
         // Optional: render faint outline of the next stroke
         this.bgGroup.innerHTML = '';
 
-        if (!this.options.showGhost) return;
+        if (!this.options.showGhost || this.options.checkMode === 'free') return;
 
         // If we want to show the full ghost:
         this.kanjiData.forEach((d, i) => {
@@ -136,7 +132,8 @@ export class KanjiWriter {
     attachEvents() {
         // Store bound functions as instance properties for cleanup
         this.boundStart = (e) => {
-            if (this.currentStrokeIndex >= this.kanjiData.length) return; // Finished
+            // Only stop drawing if in a validation mode and kanji is finished
+            if (this.options.checkMode !== 'free' && this.currentStrokeIndex >= this.kanjiData.length) return;
             e.preventDefault();
             this.isDrawing = true;
             this.currentPoints = [];
@@ -168,7 +165,24 @@ export class KanjiWriter {
         this.boundEnd = (e) => {
             if (!this.isDrawing) return;
             this.isDrawing = false;
-            this.evaluateStroke();
+
+            if (this.options.checkMode === 'stroke') {
+                this.evaluateStroke();
+            } else if (this.options.checkMode === 'full') {
+                // In 'full' mode, we just store the points and keep the path
+                this.userStrokes.push({
+                    points: this.currentPoints,
+                    path: this.currentPath
+                });
+                this.currentStrokeIndex++;
+                this.renderUpcomingStrokes();
+            } else {
+                // In 'free' mode, we just leave the path in the currentGroup
+                // and maybe track it if we want to support undo later
+                this.userStrokes.push({
+                    path: this.currentPath
+                });
+            }
         };
 
         this.svg.addEventListener('pointerdown', this.boundStart);
@@ -259,10 +273,63 @@ export class KanjiWriter {
     }
 
     /**
+     * Manual check for 'full' mode
+     * @returns {Object} result - Success and detailed results per stroke
+     */
+    check() {
+        if (this.options.checkMode !== 'full') {
+            console.warn("check() called but checkMode is not 'full'");
+            return;
+        }
+
+        const results = [];
+        let allCorrect = true;
+
+        // Evaluate each user stroke against corresponding target stroke
+        for (let i = 0; i < this.kanjiData.length; i++) {
+            const userStroke = this.userStrokes[i];
+            const targetD = this.kanjiData[i];
+
+            if (!userStroke) {
+                results.push({ success: false, message: "Missing stroke" });
+                allCorrect = false;
+                continue;
+            }
+
+            const result = this.recognizer.evaluate(userStroke.points, targetD);
+            results.push(result);
+
+            if (!result.success) {
+                allCorrect = false;
+                userStroke.path.setAttribute("stroke", this.options.incorrectColor);
+            } else {
+                userStroke.path.setAttribute("stroke", this.options.correctColor);
+            }
+        }
+
+        // If there are extra strokes, they are incorrect
+        if (this.userStrokes.length > this.kanjiData.length) {
+            allCorrect = false;
+            for (let i = this.kanjiData.length; i < this.userStrokes.length; i++) {
+                this.userStrokes[i].path.setAttribute("stroke", this.options.incorrectColor);
+                results.push({ success: false, message: "Extra stroke" });
+            }
+        }
+
+        if (allCorrect && this.userStrokes.length === this.kanjiData.length) {
+            console.log("Full Kanji Correct!");
+            if (this.onComplete) this.onComplete();
+        }
+
+        return { success: allCorrect, results };
+    }
+
+    /**
      * Public API: Clear the canvas and reset progress
      */
     clear() {
         this.currentStrokeIndex = 0;
+        this.userStrokes = [];
         this.drawnGroup.innerHTML = '';
         this.currentGroup.innerHTML = '';
         this.bgGroup.innerHTML = '';
@@ -387,6 +454,64 @@ export class KanjiWriter {
                 }
                 reject(error);
             }
+        });
+    }
+
+    /**
+     * Export the current drawing as a base64 PNG image
+     * @param {Object} options - Export options (includeGrid, includeGhost, etc.)
+     * @returns {Promise<string>} Base64 Data URL
+     */
+    async exportImage(options = {}) {
+        const {
+            includeGrid = false,
+            includeGhost = false,
+            backgroundColor = "#ffffff",
+            width = 109,
+            height = 109
+        } = options;
+
+        // Create a clone of the SVG to manipulate without affecting UI
+        const clone = this.svg.cloneNode(true);
+
+        // Find the groups in the clone
+        const groups = Array.from(clone.querySelectorAll('g'));
+        const gridGroup = groups[0];
+        const bgGroup = groups[1];
+
+        // Toggle visibility based on options
+        if (!includeGrid && gridGroup) gridGroup.setAttribute('visibility', 'hidden');
+        if (!includeGhost && bgGroup) bgGroup.setAttribute('visibility', 'hidden');
+
+        // Ensure background color if SVG doesn't have one
+        clone.style.background = backgroundColor;
+
+        // Serialize to XML
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(clone);
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                // Use higher resolution for export if desired, but 109x109 is KanjiVG base
+                // We scales up to the container's current pixel size for better quality
+                const scale = 2; // Export at 2x for better AI recognition
+                canvas.width = width * scale;
+                canvas.height = height * scale;
+
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = backgroundColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                URL.revokeObjectURL(url);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = reject;
+            img.src = url;
         });
     }
 }

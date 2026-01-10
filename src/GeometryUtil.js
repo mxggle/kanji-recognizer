@@ -58,31 +58,72 @@ export class GeometryUtil {
     }
 
     /**
+     * Get the centroid (center of mass) of a set of points
+     */
+    static getCentroid(points) {
+        if (!points || points.length === 0) return { x: 0, y: 0 };
+        let sumX = 0;
+        let sumY = 0;
+        for (const p of points) {
+            sumX += p.x;
+            sumY += p.y;
+        }
+        return { x: sumX / points.length, y: sumY / points.length };
+    }
+
+    /**
      * Compare two strokes. Returns a score (lower is better, 0 is perfect).
-     * Checks shape and direction.
+     * Now includes translation normalization to be more robust.
      * @param {Array} userPoints - User's drawn points
      * @param {Array} targetPoints - Target stroke points
-     * @param {number} startDistThreshold - Maximum allowed start point distance (default: 40)
+     * @param {Object} options - Thresholds and weights
      */
-    static compareStrokes(userPoints, targetPoints, startDistThreshold = 40) {
+    static compareStrokes(userPoints, targetPoints, options = {}) {
+        const {
+            startDistThreshold = 50,
+            translationWeight = 0.3, // How much absolute position matters (0-1)
+            shapeWeight = 0.7        // How much shape accuracy matters (0-1)
+        } = options;
+
         const resampledUser = this.resample(userPoints);
         const resampledTarget = this.resample(targetPoints);
 
-        // 1. Direction Check: Check if start and end points match roughly
+        // 1. Initial Position Check
+        // We still want the stroke to start *somewhere* near the expected start
         const startDist = this.distance(resampledUser[0], resampledTarget[0]);
-        const endDist = this.distance(resampledUser[resampledUser.length - 1], resampledTarget[resampledTarget.length - 1]);
+        if (startDist > startDistThreshold) return Infinity;
 
-        // If start is far from start, it's definitely wrong (or drawn backwards)
-        // We penalize this heavily.
-        if (startDist > startDistThreshold) return Infinity; // Way off
+        // 2. Alignment (Translation Normalization)
+        // Calculate centroids
+        const userCentroid = this.getCentroid(resampledUser);
+        const targetCentroid = this.getCentroid(resampledTarget);
 
-        // 2. Shape Check: Average distance between points
-        let totalDist = 0;
+        // Calculate translation cost (distance between centroids)
+        const translationCost = this.distance(userCentroid, targetCentroid);
+
+        // 3. Shape Check (Aligned average distance)
+        let shapeDist = 0;
+        const dx = targetCentroid.x - userCentroid.x;
+        const dy = targetCentroid.y - userCentroid.y;
+
         for (let i = 0; i < resampledUser.length; i++) {
-            totalDist += this.distance(resampledUser[i], resampledTarget[i]);
+            // Compare user point (shifted to target space) vs target point
+            const shiftedUserPoint = {
+                x: resampledUser[i].x + dx,
+                y: resampledUser[i].y + dy
+            };
+            shapeDist += this.distance(shiftedUserPoint, resampledTarget[i]);
         }
-        const avgDist = totalDist / resampledUser.length;
+        const shapeCost = shapeDist / resampledUser.length;
 
-        return avgDist;
+        // 4. Combined weighted score
+        // This is more robust because if you draw the right shape slightly shifted,
+        // the shapeCost will be low, and translationCost will be moderate,
+        // allowing it to pass even if the absolute coordinates are off.
+        const totalScore = (shapeCost * shapeWeight) + (translationCost * translationWeight);
+
+        console.log(`Recognition Debug - Shape: ${shapeCost.toFixed(2)}, Trans: ${translationCost.toFixed(2)}, Total: ${totalScore.toFixed(2)}`);
+
+        return totalScore;
     }
 }

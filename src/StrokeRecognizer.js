@@ -68,7 +68,11 @@ export class StrokeRecognizer {
             return { success: false, score: 100, message: "Length mismatch" };
         }
 
-        const score = GeometryUtil.compareStrokes(userPoints, targetPoints, this.options.startDistThreshold);
+        const score = GeometryUtil.compareStrokes(userPoints, targetPoints, {
+            startDistThreshold: this.options.startDistThreshold,
+            translationWeight: 0.3,
+            shapeWeight: 0.7
+        });
 
         return {
             success: score < this.options.passThreshold,

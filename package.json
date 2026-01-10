@@ -1,6 +1,6 @@
 {
     "name": "kanji-recognizer",
-    "version": "0.1.2",
+    "version": "0.2.0",
     "description": "A robust Kanji stroke order recognition and validation library using KanjiVG data.",
     "main": "src/index.js",
     "type": "module",
